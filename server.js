@@ -1,3 +1,4 @@
+// ---------- Initialisation ---------- \\
 import express from "express";
 import chalk from "chalk";
 import os from "os";
@@ -5,6 +6,9 @@ import os from "os";
 const app = express();
 const port = process.env.PORT || 3000;
 
+const dev = false; // Set to true to block network access
+
+// ---------- Functions ---------- \\
 /**
  * Iterates through network interfaces to find the primary non-internal IPv4 address.
  * @returns {string} The detected network IP or 'localhost' as a fallback.
@@ -23,12 +27,25 @@ function getNetworkIP() {
   return "localhost";
 }
 
-// Tell Express to listen on all network interfaces (0.0.0.0), not just localhost.
-app.listen(port, "0.0.0.0", () => {
-  const ipAddress = getNetworkIP(); // Get the detected IP
-  const accessibleUrl = `http://${ipAddress}:${port}`; // Construct the full URL
+// ---------- Routes ---------- \\
+app.get("/", (req, res) => {
+  res.status(200).send("Hello");
+});
+
+// ---------- Server Start ---------- \\
+// If 'dev' is false, bind to '0.0.0.0' (all network interfaces).
+app.listen(port, dev ? "127.0.0.1" : "0.0.0.0", () => {
+  const ipAddress = getNetworkIP(); // Get the detected network IP
 
   console.log(`Server is up and running on port ${chalk.green(port)}!`);
-  // Use chalk.cyan for a nice color to highlight the URL!
-  console.log(`Accessible on your network at ${chalk.cyan(accessibleUrl)}`);
+
+  if (dev) {
+    const localUrl = `http://localhost:${port}`;
+    console.log(`Development Mode: Network access is ${chalk.red("BLOCKED")}.`);
+    console.log(`Access locally at ${chalk.cyan(localUrl)}`);
+  } else {
+    const accessibleUrl = `http://${ipAddress}:${port}`;
+    console.log(`Network Mode: External access is ${chalk.green("ALLOWED")}.`);
+    console.log(`Access on your network at ${chalk.cyan(accessibleUrl)}`);
+  }
 });
