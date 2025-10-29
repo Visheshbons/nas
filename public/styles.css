@@ -1,0 +1,588 @@
+/* Theme configuration */
+:root {
+    color-scheme: dark;
+    /* hsl (fallback color) */
+    --bg-dark: hsl(228 79% 2%);
+    --bg: hsl(222 55% 5%);
+    --bg-light: hsl(220 35% 10%);
+    --text: hsl(220 100% 98%);
+    --text-muted: hsl(220 35% 73%);
+    --highlight: hsl(220 20% 42%);
+    --border: hsl(220 26% 31%);
+    --border-muted: hsl(220 37% 20%);
+    --primary: hsl(220 78% 76%);
+    --secondary: hsl(40 53% 60%);
+    --danger: hsl(9 26% 64%);
+    --warning: hsl(52 19% 57%);
+    --success: hsl(146 17% 59%);
+    --info: hsl(217 28% 65%);
+    /* oklch */
+    --bg-dark: oklch(0.1 0.025 264);
+    --bg: oklch(0.15 0.025 264);
+    --bg-light: oklch(0.2 0.025 264);
+    --text: oklch(0.96 0.05 264);
+    --text-muted: oklch(0.76 0.05 264);
+    --highlight: oklch(0.5 0.05 264);
+    --border: oklch(0.4 0.05 264);
+    --border-muted: oklch(0.3 0.05 264);
+    --primary: oklch(0.76 0.1 264);
+    --secondary: oklch(0.76 0.1 84);
+    --danger: oklch(0.7 0.05 30);
+    --warning: oklch(0.7 0.05 100);
+    --success: oklch(0.7 0.05 160);
+    --info: oklch(0.7 0.05 260);
+}
+body.light {
+    /* hsl (fallback color) */
+    --bg-dark: hsl(220 59% 91%);
+    --bg: hsl(220 100% 97%);
+    --bg-light: hsl(220 100% 100%);
+    --text: hsl(226 85% 7%);
+    --text-muted: hsl(220 26% 31%);
+    --highlight: hsl(220 100% 100%);
+    --border: hsl(220 19% 53%);
+    --border-muted: hsl(220 27% 65%);
+    --primary: hsl(221 49% 33%);
+    --secondary: hsl(44 100% 14%);
+    --danger: hsl(9 21% 41%);
+    --warning: hsl(52 23% 34%);
+    --success: hsl(147 19% 36%);
+    --info: hsl(217 22% 41%);
+    /* oklch */
+    --bg-dark: oklch(0.92 0.025 264);
+    --bg: oklch(0.96 0.025 264);
+    --bg-light: oklch(1 0.025 264);
+    --text: oklch(0.15 0.05 264);
+    --text-muted: oklch(0.4 0.05 264);
+    --highlight: oklch(1 0.05 264);
+    --border: oklch(0.6 0.05 264);
+    --border-muted: oklch(0.7 0.05 264);
+    --primary: oklch(0.4 0.1 264);
+    --secondary: oklch(0.4 0.1 84);
+    --danger: oklch(0.5 0.05 30);
+    --warning: oklch(0.5 0.05 100);
+    --success: oklch(0.5 0.05 160);
+    --info: oklch(0.5 0.05 260);
+}
+
+/* Base Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background-color: var(--bg-light);
+    border-radius: 4px;
+}
+
+.breadcrumb ol {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumb li:not(:last-child)::after {
+    content: "/";
+    margin-left: 0.5rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb .active {
+    color: var(--text-muted);
+}
+
+/* Action Buttons */
+.actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background-color: var(--bg-light);
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background-color: var(--bg);
+    border-color: var(--border-muted);
+}
+
+.btn.primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--bg-dark);
+}
+
+.btn.primary:hover {
+    opacity: 0.9;
+}
+
+.btn-icon {
+    padding: 0.25rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.btn-icon:hover {
+    color: var(--text);
+}
+
+.btn-icon.danger:hover {
+    color: var(--danger);
+}
+
+/* File Browser */
+.file-browser {
+    background-color: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-muted);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.file-item:hover {
+    background-color: var(--highlight);
+}
+
+.file-icon {
+    font-size: 1.5rem;
+    width: 2.5rem;
+    color: var(--text-muted);
+}
+
+.file-info {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.file-name {
+    display: block;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+
+.file-meta {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Header Styles */
+.main-header {
+    background-color: var(--bg-dark);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.main-nav ul {
+    display: flex;
+    list-style: none;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+
+.main-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.main-nav a:hover,
+.main-nav a.active {
+    color: var(--text);
+    background-color: var(--bg-light);
+}
+
+/* Theme Toggle */
+#theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+#theme-toggle:hover {
+    color: var(--text);
+    background-color: var(--bg-light);
+}
+
+/* Theme Icons */
+.light-icon {
+    display: none;
+}
+
+.dark-icon {
+    display: inline-block;
+}
+
+/* Light Theme Overrides */
+body.light {
+    color-scheme: light;
+}
+
+body.light .light-icon {
+    display: inline-block;
+}
+
+body.light .dark-icon {
+    display: none;
+}
+
+/* Transitions */
+body {
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        sans-serif;
+    line-height: 1.5;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .main-nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .main-nav a {
+        padding: 0.5rem;
+    }
+
+    .header-actions {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+}
+
+.file-item:hover .file-actions {
+    opacity: 1;
+}
+
+/* Grid View */
+.file-browser.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.grid-view .file-item {
+    flex-direction: column;
+    text-align: center;
+    border: 1px solid var(--border-muted);
+    border-radius: 4px;
+}
+
+.grid-view .file-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.grid-view .file-actions {
+    margin-top: 0.5rem;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    min-width: 160px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    display: none;
+}
+
+.context-menu.active {
+    display: block;
+}
+
+.context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu li {
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+}
+
+.context-menu li:hover {
+    background-color: var(--bg);
+}
+
+.context-menu li.danger {
+    color: var(--danger);
+}
+
+/* Modal Dialog */
+.modal {
+    border: none;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background-color: var(--bg-light);
+    color: var(--text);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.modal input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Preview Modal */
+.preview-modal {
+    max-width: 90vw;
+    width: auto;
+    max-height: 90vh;
+    padding: 0;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text);
+}
+
+.preview-content {
+    padding: 1rem;
+    overflow: auto;
+    max-height: calc(90vh - 4rem);
+}
+
+.preview-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.preview-content pre {
+    margin: 0;
+    padding: 1rem;
+    background-color: var(--bg-light);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.preview-content code {
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.preview-content video,
+.preview-content audio {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    display: block;
+}
+
+.no-preview {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+/* Drag and Drop */
+.file-item.dragging {
+    opacity: 0.5;
+    cursor: move;
+}
+
+.file-item.drag-over {
+    background-color: var(--highlight);
+    border: 2px dashed var(--primary);
+    position: relative;
+}
+
+.file-item.drag-over::after {
+    content: "Drop here to move";
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: var(--bg-dark);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    border: 2px dashed var(--border-muted);
+    border-radius: 8px;
+    margin: 1rem;
+    transition: all 0.2s ease;
+}
+
+.empty-state.drag-over {
+    border-color: var(--primary);
+    background-color: var(--highlight);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.empty-state .empty-state-sub {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
