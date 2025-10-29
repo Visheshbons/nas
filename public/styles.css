@@ -34,14 +34,14 @@
 }
 body.light {
     /* hsl (fallback color) */
-    --bg-dark: hsl(220 59% 91%);
-    --bg: hsl(220 100% 97%);
+    --bg-dark: hsl(220 59% 95%);
+    --bg: hsl(220 100% 98%);
     --bg-light: hsl(220 100% 100%);
     --text: hsl(226 85% 7%);
     --text-muted: hsl(220 26% 31%);
-    --highlight: hsl(220 100% 100%);
-    --border: hsl(220 19% 53%);
-    --border-muted: hsl(220 27% 65%);
+    --highlight: hsl(220 20% 94%);
+    --border: hsl(220 20% 92%);
+    --border-muted: hsl(220 20% 95%);
     --primary: hsl(221 49% 33%);
     --secondary: hsl(44 100% 14%);
     --danger: hsl(9 21% 41%);
@@ -78,26 +78,39 @@ body.light {
     padding: 0.5rem;
     background-color: var(--bg-light);
     border-radius: 4px;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .breadcrumb ol {
     list-style: none;
     display: flex;
-    flex-wrap: wrap;
     gap: 0.5rem;
     margin: 0;
     padding: 0;
+    align-items: center;
 }
 
-.breadcrumb li:not(:last-child)::after {
+.breadcrumb li:not(:first-child):not(:nth-child(2))::before {
     content: "/";
-    margin-left: 0.5rem;
+    margin-right: 0.5rem;
     color: var(--text-muted);
 }
 
 .breadcrumb a {
     color: var(--primary);
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.breadcrumb li:nth-child(2) a {
+    color: var(--text-muted);
+}
+
+.breadcrumb li:nth-child(2) a:hover {
+    color: var(--text);
 }
 
 .breadcrumb .active {
@@ -105,9 +118,11 @@ body.light {
 }
 
 /* Action Buttons */
+/* Actions */
 .actions {
     display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin-bottom: 1rem;
 }
 
@@ -137,6 +152,17 @@ body.light {
 
 .btn.primary:hover {
     opacity: 0.9;
+    background-color: var(--primary);
+}
+
+.btn.primary + .btn.primary {
+    background-color: transparent;
+    color: var(--primary);
+}
+
+.btn.primary + .btn.primary:hover {
+    background-color: var(--bg-light);
+    opacity: 1;
 }
 
 .btn-icon {
@@ -168,10 +194,12 @@ body.light {
     display: flex;
     align-items: center;
     padding: 0.75rem;
-    border-bottom: 1px solid var(--border-muted);
+    border-bottom: 1px solid var(--border);
     transition: all 0.2s ease;
     cursor: pointer;
     position: relative;
+    text-decoration: none;
+    color: var(--text);
 }
 
 .file-item:hover {
@@ -182,11 +210,36 @@ body.light {
     font-size: 1.5rem;
     width: 2.5rem;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .file-info {
     flex: 1;
     margin-right: 1rem;
+}
+
+.file-item[data-type="directory"] .fa-arrow-left {
+    color: var(--primary);
+}
+
+.back-directory {
+    background-color: var(--bg-dark);
+    border-bottom: 1px solid var(--border);
+}
+
+.back-directory:hover {
+    background-color: var(--highlight);
+}
+
+.back-directory .fa-arrow-left {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.back-directory .file-name {
+    color: var(--text-muted);
 }
 
 .file-name {
@@ -465,10 +518,21 @@ body {
 
 /* Preview Modal */
 .preview-modal {
-    max-width: 90vw;
+    max-width: 95vw;
     width: auto;
-    max-height: 90vh;
+    max-height: 95vh;
     padding: 0;
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-dark);
+}
+
+.preview-modal[open] {
+    display: flex;
 }
 
 .modal-header {
@@ -486,25 +550,115 @@ body {
     color: var(--text);
 }
 
+.close-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background-color: var(--bg-light);
+    color: var(--text);
+}
+
 .preview-content {
     padding: 1rem;
-    overflow: auto;
-    max-height: calc(90vh - 4rem);
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 0;
+    max-height: calc(95vh - 7rem);
+    background: var(--bg);
 }
 
 .preview-content img {
     max-width: 100%;
-    height: auto;
+    max-height: calc(95vh - 7rem);
+    object-fit: contain;
     display: block;
     margin: 0 auto;
+}
+
+/* Code preview styling */
+.preview-content pre {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: var(--bg-dark) !important;
+    max-height: none !important;
+}
+
+.preview-content code {
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+    background: none !important;
+    text-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Override Prism.js theme colors */
+.preview-content :not(pre) > code[class*="language-"],
+.preview-content pre[class*="language-"] {
+    background: var(--bg-dark) !important;
+}
+
+.preview-content .token.comment,
+.preview-content .token.prolog,
+.preview-content .token.doctype,
+.preview-content .token.cdata {
+    color: var(--text-muted) !important;
+}
+
+.preview-content .token.function,
+.preview-content .token.class-name {
+    color: var(--primary) !important;
+}
+
+.preview-content .token.keyword {
+    color: var(--info) !important;
+}
+
+.preview-content .token.string {
+    color: var(--success) !important;
+}
+
+.preview-content .token.number {
+    color: var(--warning) !important;
 }
 
 .preview-content pre {
     margin: 0;
     padding: 1rem;
-    background-color: var(--bg-light);
+    background-color: var(--highlight);
     border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
     overflow-x: auto;
+    white-space: pre;
+}
+
+.preview-footer {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#preview-info {
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
 }
 
 .preview-content code {
@@ -535,7 +689,7 @@ body {
 
 .file-item.drag-over {
     background-color: var(--highlight);
-    border: 2px dashed var(--primary);
+    border: 2px dashed var(--border);
     position: relative;
 }
 
@@ -560,7 +714,7 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    border: 2px dashed var(--border-muted);
+    border: 1px dashed var(--border-muted);
     border-radius: 8px;
     margin: 1rem;
     transition: all 0.2s ease;
@@ -585,4 +739,87 @@ body {
 .empty-state .empty-state-sub {
     font-size: 0.875rem;
     margin-top: 0.5rem;
+}
+
+/* Terminal Window */
+.terminal-window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 400px;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    color: var(--text);
+    display: none;
+    flex-direction: column;
+}
+
+.window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+}
+
+.window-title {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.terminal-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    background-color: var(--bg-dark);
+}
+
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.prompt {
+    color: var(--primary);
+    user-select: none;
+}
+
+#terminal-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0;
+    outline: none;
+}
+
+.terminal-line {
+    padding: 0.25rem 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.terminal-line.error {
+    color: var(--danger);
+}
+
+#terminal-output {
+    margin-bottom: 1rem;
+}
+
+.terminal-window[open] {
+    display: flex;
 }

@@ -5,10 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home | VNAS</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="js/theme.js" defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
+    <!-- Terminal Window -->
+    <dialog id="terminal-window" class="terminal-window">
+        <div class="window-header">
+            <span class="window-title">Terminal</span>
+            <button class="btn-icon close-btn" onclick="closeTerminal()">✕</button>
+        </div>
+        <div class="terminal-content">
+            <div id="terminal-output"></div>
+            <div class="terminal-input-line">
+                <span class="prompt">$</span>
+                <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </dialog>
+
     <%- include('header') %>
 
     <main class="container">
@@ -34,9 +51,13 @@
         <!-- Action Buttons -->
         <div class="actions">
             <button class="btn primary" onclick="document.getElementById('upload-input').click()">
-                <i class="fas fa-upload"></i> Upload
+                <i class="fas fa-upload"></i> Upload Files
+            </button>
+            <button class="btn primary" onclick="document.getElementById('folder-upload-input').click()">
+                <i class="fas fa-folder-plus"></i> Upload Folder
             </button>
             <input type="file" id="upload-input" multiple style="display: none">
+            <input type="file" id="folder-upload-input" webkitdirectory directory multiple style="display: none">
 
             <button class="btn" onclick="document.getElementById('create-folder-modal').showModal()">
                 <i class="fas fa-folder-plus"></i> New Folder
@@ -49,10 +70,23 @@
 
         <!-- File Browser -->
         <div class="file-browser" id="file-browser">
+            <% if (paths.length > 0) { %>
+                <div class="file-item back-directory" data-type="directory" data-path="<%= currentPath.split('/').slice(0, -1).join('/') %>">
+                    <div class="file-icon" onclick="handleItemClick('<%= currentPath.split('/').slice(0, -1).join('/') %>', 'directory', event)">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="file-info" onclick="handleItemClick('<%= currentPath.split('/').slice(0, -1).join('/') %>', 'directory', event)">
+                        <span class="file-name">Back</span>
+                        <span class="file-meta">
+                            Parent Directory
+                        </span>
+                    </div>
+                </div>
+            <% } %>
             <% if (items && items.length > 0) { %>
                 <% items.forEach(item => { %>
                     <div class="file-item" data-type="<%= item.type %>" data-path="<%= item.path %>" draggable="true">
-                        <div class="file-icon" onclick="handleItemClick('<%= item.path %>', '<%= item.type %>')">
+                        <div class="file-icon" onclick="handleItemClick('<%= item.path %>', '<%= item.type %>', event)">
                             <% if (item.type === 'directory') { %>
                                 <i class="fas fa-folder"></i>
                             <% } else { %>
@@ -60,7 +94,7 @@
                             <% } %>
                         </div>
 
-                        <div class="file-info" onclick="handleItemClick('<%= item.path %>', '<%= item.type %>')">
+                        <div class="file-info" onclick="handleItemClick('<%= item.path %>', '<%= item.type %>', event)">
                             <span class="file-name"><%= item.name %></span>
                             <span class="file-meta">
                                 <% if (item.type !== 'directory') { %>
@@ -134,15 +168,18 @@
     </dialog>
 
     <!-- Preview Modal -->
-    <dialog id="preview-modal" class="modal preview-modal">
+    <dialog id="preview-modal" class="modal preview-modal" onclick="closePreview()">
         <div class="modal-header">
             <h3 id="preview-title">File Preview</h3>
-            <button class="btn-icon" onclick="this.closest('dialog').close()">
-                <i class="fas fa-times"></i>
+            <button class="btn-icon close-btn">
+                ✕
             </button>
         </div>
         <div class="preview-content" id="preview-content">
             <!-- Content will be loaded here -->
+        </div>
+        <div class="preview-footer">
+            <span id="preview-info"></span>
         </div>
     </dialog>
 
@@ -152,12 +189,18 @@
         // File Preview Handler
         async function previewFile(path, type) {
             const modal = document.getElementById('preview-modal');
+            modal.style.display = ''; // Reset any display style
             const content = document.getElementById('preview-content');
+            content.innerHTML = ''; // Clear previous content
             const title = document.getElementById('preview-title');
 
             try {
                 const response = await fetch(`/preview?path=${encodeURIComponent(path)}`);
                 const contentType = response.headers.get('Content-Type');
+                const previewInfo = document.getElementById('preview-info');
+                if (previewInfo) {
+                    previewInfo.textContent = contentType || 'Unknown type';
+                }
 
                 if (contentType.startsWith('image/')) {
                     // Image preview
@@ -167,7 +210,21 @@
                 } else if (contentType.startsWith('text/') || contentType.includes('javascript')) {
                     // Text preview
                     const text = await response.text();
-                    content.innerHTML = `<pre><code>${escapeHtml(text)}</code></pre>`;
+                    if (contentType.includes('javascript')) {
+                        content.innerHTML = `<pre><code class="language-javascript">${escapeHtml(text)}</code></pre>`;
+                        Prism.highlightAll();
+                    } else {
+                        // Determine content type and apply appropriate styling
+                        if (contentType.includes('javascript')) {
+                            content.innerHTML = `<pre><code class="language-javascript">${escapeHtml(text)}</code></pre>`;
+                            Prism.highlightAll();
+                        } else if (contentType.includes('json')) {
+                            content.innerHTML = `<pre><code class="language-json">${escapeHtml(text)}</code></pre>`;
+                            Prism.highlightAll();
+                        } else {
+                            content.innerHTML = `<pre><code>${escapeHtml(text)}</code></pre>`;
+                        }
+                    }
                 } else if (contentType.startsWith('video/')) {
                     // Video preview
                     content.innerHTML = `
@@ -188,9 +245,32 @@
 
                 title.textContent = path.split('/').pop();
                 modal.showModal();
+                // Add ESC key listener
+                document.addEventListener('keydown', handleEscKey);
             } catch (error) {
                 console.error('Preview error:', error);
                 alert('Error loading preview');
+            }
+
+            // Close preview and cleanup
+            function closePreview() {
+                const modal = document.getElementById('preview-modal');
+                if (modal.open) {  // Only proceed if modal is open
+                    modal.close();
+                    document.removeEventListener('keydown', handleEscKey);
+                    // Clean up any object URLs
+                    const img = modal.querySelector('img');
+                    if (img && img.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(img.src);
+                    }
+                }
+            }
+
+            // Handle ESC key
+            function handleEscKey(e) {
+                if (e.key === 'Escape') {
+                    closePreview();
+                }
             }
         }
 
@@ -203,14 +283,104 @@
     </script>
 
     <script>
-        // File Upload Handler
-        document.getElementById('upload-input').addEventListener('change', async (e) => {
-            const files = e.target.files;
+        // Terminal handling
+        document.addEventListener('keydown', function(e) {
+            if (e.key.toLowerCase() === 't' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                openTerminal();
+            }
+        });
+
+        const terminal = {
+            currentPath: '<%= currentPath %>',
+            element: null,
+            input: null,
+            output: null,
+
+            init() {
+                this.element = document.getElementById('terminal-window');
+                this.input = document.getElementById('terminal-input');
+                this.output = document.getElementById('terminal-output');
+
+                this.input.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        const command = this.input.value.trim();
+                        this.input.value = '';
+                        await this.executeCommand(command);
+                    }
+                });
+            },
+
+            print(text, className = '') {
+                const line = document.createElement('div');
+                line.className = `terminal-line ${className}`;
+                line.textContent = text;
+                this.output.appendChild(line);
+                this.output.scrollTop = this.output.scrollHeight;
+            },
+
+            async executeCommand(command) {
+                this.print(`$ ${command}`);
+                const [cmd, ...args] = command.split(' ');
+
+                try {
+                    const response = await fetch('/terminal', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            command: cmd,
+                            args,
+                            currentPath: this.currentPath
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.error) {
+                        this.print(result.error, 'error');
+                    } else {
+                        if (result.output) {
+                            this.print(result.output);
+                        }
+                        if (result.currentPath) {
+                            this.currentPath = result.currentPath;
+                            if (cmd === 'cd') {
+                                window.location.href = `/?path=${encodeURIComponent(result.currentPath)}`;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    this.print(`Error: ${error.message}`, 'error');
+                }
+            }
+        };
+
+        function openTerminal() {
+            const terminalWindow = document.getElementById('terminal-window');
+            terminalWindow.showModal();
+            terminal.init();
+            document.getElementById('terminal-input').focus();
+        }
+
+        function closeTerminal() {
+            document.getElementById('terminal-window').close();
+        }
+
+        // File Upload Handlers
+        async function handleUpload(files, isFolder = false) {
             const formData = new FormData();
+            const currentPath = '<%= currentPath %>';
 
             for (let file of files) {
+                // For folder uploads, maintain the directory structure
+                const filePath = isFolder ? file.webkitRelativePath : file.name;
                 formData.append('files', file);
+                formData.append('paths', filePath);
             }
+
+            formData.append('currentPath', currentPath);
 
             try {
                 const response = await fetch('/upload', {
@@ -219,10 +389,24 @@
                 });
                 if (response.ok) {
                     window.location.reload();
+                } else {
+                    const error = await response.text();
+                    alert(error || 'Upload failed');
                 }
             } catch (err) {
                 console.error('Upload failed:', err);
+                alert('Upload failed: ' + err.message);
             }
+        }
+
+        // File Upload Handler
+        document.getElementById('upload-input').addEventListener('change', async (e) => {
+            handleUpload(e.target.files);
+        });
+
+        // Folder Upload Handler
+        document.getElementById('folder-upload-input').addEventListener('change', async (e) => {
+            handleUpload(e.target.files, true);
         });
 
         // Folder Creation
@@ -257,12 +441,17 @@
         }
 
         // Drag and Drop Functionality
-        // Handle item clicks (folder navigation and file downloads)
-        function handleItemClick(itemPath, itemType) {
+        // Handle item clicks (folder navigation and file preview)
+        function handleItemClick(itemPath, itemType, event) {
+            // Ignore clicks on buttons within the item
+            if (event.target.closest('.file-actions')) {
+                return;
+            }
+
             if (itemType === 'directory') {
                 window.location.href = `/?path=${encodeURIComponent(itemPath)}`;
             } else {
-                downloadFile(itemPath);
+                previewFile(itemPath, itemType);
             }
         }
 

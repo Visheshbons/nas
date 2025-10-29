@@ -5,7 +5,15 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
-import { createReadStream, createWriteStream, existsSync, statSync } from "fs";
+import {
+  createReadStream,
+  createWriteStream,
+  existsSync,
+  statSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+} from "fs";
 import mime from "mime-types";
 import fileUpload from "express-fileupload";
 import sanitize from "sanitize-filename";
@@ -143,14 +151,35 @@ app.post("/upload", async (req, res) => {
       return res.status(400).send("No files were uploaded.");
     }
 
-    const targetDir = safePath(req.query.path || "");
+    const currentPath = req.body.currentPath || "";
+    const targetDir = safePath(currentPath);
     const files = Array.isArray(req.files.files)
       ? req.files.files
       : [req.files.files];
+    const paths = Array.isArray(req.body.paths)
+      ? req.body.paths
+      : [req.body.paths];
 
-    for (const file of files) {
-      const sanitizedName = sanitize(file.name);
-      const targetPath = path.join(targetDir, sanitizedName);
+    // Set proper MIME types for JavaScript files
+    if (files.some((f) => f.name.endsWith(".js"))) {
+      res.setHeader("Content-Type", "application/javascript");
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const filePath = paths[i];
+      const sanitizedPath = filePath
+        .split("/")
+        .map((part) => sanitize(part))
+        .join("/");
+      const targetPath = path.join(targetDir, sanitizedPath);
+
+      // Create parent directories if they don't exist
+      const parentDir = path.dirname(targetPath);
+      if (!existsSync(parentDir)) {
+        mkdirSync(parentDir, { recursive: true });
+      }
+
       await file.mv(targetPath);
     }
 
@@ -258,6 +287,83 @@ app.post("/move", async (req, res) => {
     } else {
       res.status(500).send("Error moving item");
     }
+  }
+});
+
+// Terminal command endpoint
+app.post("/terminal", async (req, res) => {
+  try {
+    const { command, args, currentPath } = req.body;
+    let response = { output: "", currentPath: currentPath };
+
+    const fullPath = safePath(currentPath);
+
+    switch (command.toLowerCase()) {
+      case "ls":
+        const items = readdirSync(fullPath);
+        response.output = items.join("\n");
+        break;
+
+      case "cd":
+        const targetPath = args[0] || "";
+        let newPath;
+
+        if (targetPath === "..") {
+          newPath = path.dirname(currentPath);
+        } else if (targetPath === "") {
+          newPath = "";
+        } else {
+          newPath = path.join(currentPath, targetPath);
+        }
+
+        const fullNewPath = safePath(newPath);
+        if (!existsSync(fullNewPath)) {
+          throw new Error("Directory does not exist");
+        }
+        if (!statSync(fullNewPath).isDirectory()) {
+          throw new Error("Not a directory");
+        }
+        response.currentPath = newPath;
+        break;
+
+      case "mkdir":
+        if (!args[0]) {
+          throw new Error("Directory name required");
+        }
+        const dirPath = safePath(currentPath, args[0]);
+        mkdirSync(dirPath, { recursive: true });
+        response.output = `Created directory: ${args[0]}`;
+        break;
+
+      case "rm":
+        if (!args[0]) {
+          throw new Error("Path required");
+        }
+        const rmPath = safePath(currentPath, args[0]);
+        rmSync(rmPath, { recursive: true, force: true });
+        response.output = `Removed: ${args[0]}`;
+        break;
+
+      case "pwd":
+        response.output = currentPath || "/";
+        break;
+
+      case "touch":
+        if (!args[0]) {
+          throw new Error("Filename required");
+        }
+        const filePath = safePath(currentPath, args[0]);
+        createWriteStream(filePath).end();
+        response.output = `Created file: ${args[0]}`;
+        break;
+
+      default:
+        throw new Error("Unknown command");
+    }
+
+    res.json(response);
+  } catch (error) {
+    res.json({ error: error.message });
   }
 });
 
