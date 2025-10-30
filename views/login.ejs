@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login - VNAS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="<%= locals.theme || 'dark' %>">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/">
+                    <i class="fas fa-hard-drive"></i>
+                    <span>VNAS</span>
+                </a>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-sun light-icon"></i>
+                    <i class="fas fa-moon dark-icon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="max-width: 400px; margin: 4rem auto; padding: 2rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <i class="fas fa-lock" style="font-size: 4rem; color: var(--primary);"></i>
+                <h1 style="margin-top: 1rem; font-size: 1.5rem;">Enter Password</h1>
+            </div>
+
+            <form action="/login" method="POST">
+                <% if (error) { %>
+                    <div style="background-color: var(--bg-light); border: 1px solid var(--danger); color: var(--danger); padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <div style="margin-bottom: 2rem;">
+                    <label for="password" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Password</label>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           required
+                           style="width: 100%;
+                                  padding: 0.75rem;
+                                  background-color: var(--bg-light);
+                                  border: 1px solid var(--border);
+                                  color: var(--text);
+                                  border-radius: 4px;
+                                  transition: border-color 0.2s ease;"
+                    >
+                </div>
+
+                <button type="submit"
+                        class="btn primary"
+                        style="width: 100%;
+                               padding: 0.75rem;
+                               font-size: 1rem;
+                               justify-content: center;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <%- include('footer') %>
+
+    <script>
+        // Focus password field on load
+        document.getElementById('password').focus();
+
+        // Add hover effect to inputs
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.style.borderColor = 'var(--primary)';
+            });
+            input.addEventListener('blur', () => {
+                input.style.borderColor = 'var(--border)';
+            });
+        });
+    </script>
+</body>
+</html>

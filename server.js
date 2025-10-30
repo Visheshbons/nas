@@ -17,6 +17,9 @@ import {
 import mime from "mime-types";
 import fileUpload from "express-fileupload";
 import sanitize from "sanitize-filename";
+import argon2 from "argon2";
+import { body, validationResult } from "express-validator";
+import cookieParser from "cookie-parser";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,25 +29,55 @@ const __dirname = path.dirname(__filename);
 // Base directory for file storage
 const STORAGE_DIR = process.env.STORAGE_DIR || path.join(__dirname, "storage");
 
+// This is the hashed password stored in the original project
+const PASSWORD =
+  "$argon2id$v=19$m=65536,t=3,p=4$PYxQnK6RuBOMyn6u1h0PtA$f6q6gks0w4qSLsvNUTDs3Yb4IdmGObuzeGjEBcEATKQ";
+
+// Active admin sessions (in-memory)
+const adminSessions = new Set();
+let serverSession =
+  Math.random().toString(36).substring(2, 15) +
+  Math.random().toString(36).substring(2, 15);
+
 // ---------- Middleware ---------- //
 app.use(express.static("public"));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   fileUpload({
     createParentPath: true,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   }),
 );
+
+// Add cookie-parser middleware so `req.cookies` is populated
+app.use(cookieParser());
+
 app.set("view engine", "ejs");
+
+/**
+ * Authentication middleware
+ * Uses cookie-parser's `req.cookies` to check for a valid adminSession and serverSession.
+ */
+function requireAuth(req, res, next) {
+  const sessionId = req.cookies?.adminSession;
+  const sessionServer = req.cookies?.serverSession;
+
+  if (
+    sessionId &&
+    adminSessions.has(sessionId) &&
+    sessionServer === serverSession
+  ) {
+    return next();
+  } else {
+    return res.redirect("/login");
+  }
+}
 
 // ---------- Configuration ---------- //
 const dev = false; // Set to true to block network access
 
 // ---------- Helper Functions ---------- //
-/**
- * Iterates through network interfaces to find the primary non-internal IPv4 address.
- * @returns {string} The detected network IP or 'localhost' as a fallback.
- */
 function getNetworkIP() {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
@@ -63,6 +96,7 @@ function getNetworkIP() {
  * @returns {string} Safe path within storage directory
  */
 function safePath(...paths) {
+  // Normalize the joined path and resolve relative to STORAGE_DIR to avoid traversal
   const normalized = path.normalize(path.join(...paths));
   const resolvedPath = path.resolve(STORAGE_DIR, normalized);
 
@@ -72,11 +106,6 @@ function safePath(...paths) {
   return resolvedPath;
 }
 
-/**
- * Format file size in human-readable format
- * @param {number} bytes - Size in bytes
- * @returns {string} Formatted size
- */
 function formatSize(bytes) {
   const units = ["B", "KB", "MB", "GB", "TB"];
   let size = bytes;
@@ -90,12 +119,6 @@ function formatSize(bytes) {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
-/**
- * Get file and directory information
- * @param {string} itemPath - Path to item
- * @param {string} baseName - Base name of item
- * @returns {Object} Item information
- */
 async function getItemInfo(itemPath, baseName) {
   const stats = await fs.stat(itemPath);
   const isDir = stats.isDirectory();
@@ -115,8 +138,74 @@ if (!existsSync(STORAGE_DIR)) {
 }
 
 // ---------- Routes ---------- //
+// Login page
+app.get("/login", (req, res) => {
+  const theme = req.cookies?.theme || "dark";
+  res.render("login.ejs", { error: null, theme });
+});
+
+// Login handler
+app.post(
+  "/login",
+  [body("password").isString().notEmpty()],
+  async (req, res) => {
+    console.log(chalk.yellow("-------######## LOGIN ATTEMPT ########--------"));
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.render("login", {
+        error: "Invalid input",
+        theme: req.cookies?.theme || "dark",
+      });
+    }
+
+    const { password } = req.body;
+
+    try {
+      if (await argon2.verify(PASSWORD, password)) {
+        console.log(`Authentication: [${chalk.green("PASS")}]`);
+
+        // Create a session id and register it server-side
+        const sessionId = Date.now().toString() + Math.random().toString(36);
+        adminSessions.add(sessionId); // Register the session ID so requireAuth will accept it
+
+        // Set cookies
+        res.cookie("adminSession", sessionId, {
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+        res.cookie("serverSession", serverSession, {
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+
+        res.redirect("/");
+        console.log(`Login: [${chalk.green("PASS")}]`);
+        return;
+      } else {
+        console.log(`Authentication: [${chalk.red("FAIL")}]`);
+        return res.render("login", {
+          error: "Invalid password",
+          theme: req.cookies?.theme || "dark",
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.render("login", {
+        error: "An error occurred during login",
+        theme: req.cookies?.theme || "dark",
+      });
+    } finally {
+      console.log(
+        chalk.yellow("-------######## LOGIN ATTEMPT END ########--------\n"),
+      );
+    }
+  },
+);
+
+// Protected routes
 // Main route - File browser
-app.get("/", async (req, res) => {
+app.get("/", requireAuth, async (req, res) => {
   try {
     const requestPath = req.query.path || "";
     const currentPath = safePath(requestPath);
@@ -145,7 +234,7 @@ app.get("/", async (req, res) => {
 });
 
 // File upload
-app.post("/upload", async (req, res) => {
+app.post("/upload", requireAuth, async (req, res) => {
   try {
     if (!req.files || Object.keys(req.files).length === 0) {
       return res.status(400).send("No files were uploaded.");
@@ -191,7 +280,7 @@ app.post("/upload", async (req, res) => {
 });
 
 // File download
-app.get("/download", async (req, res) => {
+app.get("/download", requireAuth, async (req, res) => {
   try {
     const filePath = safePath(req.query.path || "");
     const stats = await fs.stat(filePath);
@@ -215,7 +304,7 @@ app.get("/download", async (req, res) => {
 });
 
 // Preview file
-app.get("/preview", async (req, res) => {
+app.get("/preview", requireAuth, async (req, res) => {
   try {
     const filePath = safePath(req.query.path);
     const stats = await fs.stat(filePath);
@@ -248,7 +337,7 @@ app.get("/preview", async (req, res) => {
 });
 
 // Move file/folder
-app.post("/move", async (req, res) => {
+app.post("/move", requireAuth, async (req, res) => {
   try {
     const { source, target } = req.body;
     if (!source || !target) {
@@ -291,7 +380,7 @@ app.post("/move", async (req, res) => {
 });
 
 // Terminal command endpoint
-app.post("/terminal", async (req, res) => {
+app.post("/terminal", requireAuth, async (req, res) => {
   try {
     const { command, args, currentPath } = req.body;
     let response = { output: "", currentPath: currentPath };
@@ -368,7 +457,7 @@ app.post("/terminal", async (req, res) => {
 });
 
 // Delete file/folder
-app.post("/delete", async (req, res) => {
+app.post("/delete", requireAuth, async (req, res) => {
   try {
     const itemPath = safePath(req.body.path);
     const stats = await fs.stat(itemPath);
@@ -387,7 +476,7 @@ app.post("/delete", async (req, res) => {
 });
 
 // Create new folder
-app.post("/create-folder", async (req, res) => {
+app.post("/create-folder", requireAuth, async (req, res) => {
   try {
     const { name, path: parentPath } = req.body;
     if (!name) {
@@ -419,7 +508,7 @@ app.post("/create-folder", async (req, res) => {
 });
 
 // Rename file/folder
-app.post("/rename", async (req, res) => {
+app.post("/rename", requireAuth, async (req, res) => {
   try {
     const { oldPath, newName } = req.body;
     const sanitizedName = sanitize(newName);
