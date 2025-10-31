@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "clear; node server.js",
-    "dev": "clear; nodemon server.js"
+    "start": "clear; node start-all.js",
+    "dev": "clear; nodemon start-all.js --dev"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +24,8 @@
     "multer": "^2.0.2",
     "nodemon": "^3.1.10",
     "path-browserify": "^1.0.1",
-    "sanitize-filename": "^1.6.3"
+    "sanitize-filename": "^1.6.3",
+    "node-ssdp": "*",
+    "bonjour": "*"
   }
 }
